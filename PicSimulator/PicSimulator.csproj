@@ -70,13 +70,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MCU_Modules\Generators\MCU_PIC16F1827.cs" />
-    <Compile Include="MCU_Modules\IOPorts.cs" />
-    <Compile Include="MCU_Modules\MCUGenerator.cs" />
-    <Compile Include="MCU_Modules\MCU_Simulator.cs" />
-    <Compile Include="MCU_Modules\Register.cs" />
-    <Compile Include="MCU_Modules\RegisterList.cs" />
-    <Compile Include="MCU_Modules\RegisterMap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PicSimulator.MCU_Modules
+namespace PicSimulatorLib
 {
     public class IO
     {

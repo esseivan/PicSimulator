@@ -23,37 +23,14 @@ namespace PicSimulatorLib
 
         private byte value = 0x00;
 
-        public enum RegisterMode
-        {
-            Unimplemented,
-            ReadOnly,
-            ReadWrite,
-        }
+        public Register() { }
 
-        public Register() : this(RegisterMode.ReadWrite) { }
-
-        public Register(RegisterMode mode)
-        {
-            switch (mode)
-            {
-                case RegisterMode.Unimplemented:
-                    UnimplementedMask = 0xff;
-                    break;
-                case RegisterMode.ReadOnly:
-                    WritableMask = 0x00;
-                    break;
-                case RegisterMode.ReadWrite:
-                default:
-                    break;
-            }
-        }
-
-        public Register(RegisterMode mode, byte unimplementedMask) : this(mode)
+        public Register(byte unimplementedMask)
         {
             this.UnimplementedMask = unimplementedMask;
         }
 
-        public Register(RegisterMode mode, byte unimplementedMask, byte initialValue) : this(mode, unimplementedMask)
+        public Register(byte unimplementedMask, byte initialValue) : this(unimplementedMask)
         {
             this.value = initialValue;
         }

@@ -5,14 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PicSimulator.MCU_Modules.Generators
+namespace PicSimulatorLib
 {
     public class MCU_PIC16F1827 : MCU_Simulator
     {
         public MCU_PIC16F1827()
         {
-            RegisterMap = new RegisterMap(4 * 1024);
-            IOs = new List<IO>(16);
+            registers = new Register[4096];
+            program = new byte[4096];
+            gpios = new IO[16];
+        }
+
+        public void Populate()
+        {
+            for (int i = 0; i < registers.Length; i++)
+            {
+                registers[i] = new Register();
+            }
         }
 
         public Dictionary<string, Register> PopulateRegisters()
@@ -109,6 +118,5 @@ namespace PicSimulator.MCU_Modules.Generators
                     return Convert.ToInt16(item, 10);
             }
         }
-
     }
 }

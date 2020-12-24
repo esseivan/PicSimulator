@@ -9,15 +9,14 @@ using System.Threading.Tasks;
 namespace PicSimulatorLib.Tests
 {
     [TestClass()]
-    public class RegisterListPopulateTests
+    public class GeneratorTests
     {
         [TestMethod()]
-        public void PopulateTest()
+        public void Generate_PIC16F1827_Test()
         {
-            RegisterList rl = RegisterListPopulate.Populate(@"C:\Workspace\PicSimulator\PicSimulator\MCU_Modules\Generators\PIC16F1827.csv");
+            MCU_Simulator mcu = Generator.GenerateSimulator(Generator.MCUReference.PIC16F1827);
 
-            Assert.AreEqual(4096, rl.Registers.Count);
-
+            Assert.IsTrue(mcu.GetType().IsEquivalentTo(typeof(MCU_PIC16F1827)));
         }
     }
 }
