@@ -4,20 +4,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PicSimulator.MCU_Modules
+namespace PicSimulatorLib
 {
+    /// <summary>
+    /// Register
+    /// </summary>
     public class Register
     {
         public byte UnimplementedMask = 0x00;
-        private byte unimplementedMaskInvert => (byte)(0xff - UnimplementedMask);
+        public byte UnimplementedMaskInvert => (byte)(0xff - UnimplementedMask);
         public byte ReadableMask = 0xff;
         public byte WritableMask = 0xff;
-
-        private byte value = 0x00;
         public byte Value => GetValue();
 
         public Register SyncRegister = null;
-        public int SyncToAddr = -1;
+        public int SyncToAddr = SyncToAddr_None;
+        public const int SyncToAddr_None = -1;
+
+        private byte value = 0x00;
 
         public enum RegisterMode
         {
@@ -59,14 +63,23 @@ namespace PicSimulator.MCU_Modules
             this.SyncRegister = syncRegister;
         }
 
+        public Register(int syncAddr)
+        {
+            this.SyncToAddr = syncAddr;
+        }
+
         public void SetValue(byte value)
         {
             if (SyncRegister != null)
                 SyncRegister.SetValue(value);
+            else if (SyncToAddr != SyncToAddr_None)
+            {
+                throw new InvalidOperationException("Register not synced. Use RegisterList.ApplySyncs() method");
+            }
             else
             {
                 value &= WritableMask;
-                value &= unimplementedMaskInvert;
+                value &= UnimplementedMaskInvert;
                 this.value = value;
             }
         }
@@ -75,10 +88,14 @@ namespace PicSimulator.MCU_Modules
         {
             if (SyncRegister != null)
                 return SyncRegister.GetValue();
+            else if (SyncToAddr != SyncToAddr_None)
+            {
+                throw new InvalidOperationException("Register not synced. Use RegisterList.ApplySyncs() method");
+            }
             else
             {
                 byte result = (byte)(value & ReadableMask);
-                result &= unimplementedMaskInvert;
+                result &= UnimplementedMaskInvert;
                 return result;
             }
         }

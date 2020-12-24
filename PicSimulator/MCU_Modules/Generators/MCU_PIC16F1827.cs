@@ -46,7 +46,7 @@ namespace PicSimulator.MCU_Modules.Generators
                             SyncToAddr = item.syncToAddr,
                         };
 
-                        registers.Add
+                        registers.Add(item.name, r);
                     }
 
                 }
@@ -71,7 +71,7 @@ namespace PicSimulator.MCU_Modules.Generators
 
             }
 
-
+            return registers;
         }
 
         public class ImportItem
