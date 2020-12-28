@@ -69,11 +69,13 @@ namespace PicSimulatorLib.Tests
         [TestMethod()]
         public void DecodeTest()
         {
+            WriteTestFile();
+
             var data = HexFileDecoder.Decode("test.hex");
             var dataInstructions = HexFileDecoder.GetInstructions(data);
             var dataString = HexFileDecoder.GetNames(dataInstructions);
 
-            Console.WriteLine(string.Join("\n", dataString));
+            Console.WriteLine(string.Join("\n", dataString.Values));
         }
     }
 }

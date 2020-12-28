@@ -18,6 +18,8 @@ namespace PicSimulatorLib
         protected short bankLength => 0;
         protected byte bankCount => 0;
 
+        
+
         public int GetBank(int addr)
         {
             return (addr >> addrBits) & (int)(Math.Pow(2, bankBits) - 1);

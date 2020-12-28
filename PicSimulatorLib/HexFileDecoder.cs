@@ -110,9 +110,8 @@ namespace PicSimulatorLib
             for (int i = 0; i < dataCount / 2; i++)
             {
                 int j = i;
-                short value = Convert.ToByte(dataString.Substring(j * 2, 2), 16);
-                j++;
-                value += (short)(0x100 * Convert.ToByte(dataString.Substring(j * 2, 2), 16));
+                short value = Convert.ToByte(dataString.Substring((2 * j) * 2, 2), 16);
+                value += (short)(0x100 * Convert.ToByte(dataString.Substring(((2 * j) + 1) * 2, 2), 16));
                 output[i] = value;
             }
             return output;
