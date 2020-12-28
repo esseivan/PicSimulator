@@ -56,7 +56,9 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="HexFileDecoderTests.cs" />
     <Compile Include="MCU_Modules\GeneratorTests.cs" />
+    <Compile Include="MCU_Modules\MCU_PIC16F1827Tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

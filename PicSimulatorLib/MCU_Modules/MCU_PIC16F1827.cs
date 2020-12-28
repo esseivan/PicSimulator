@@ -9,11 +9,18 @@ namespace PicSimulatorLib
 {
     public class MCU_PIC16F1827 : MCU_Simulator
     {
+        protected new byte addrBits => 7;
+        protected new byte bankBits => 5;
+        protected new short bankLength => 128;
+        protected new byte bankCount => 32;
+
         public MCU_PIC16F1827()
         {
             registers = new Register[4096];
             program = new byte[4096];
             gpios = new IO[16];
+
+            Populate();
         }
 
         public void Populate()

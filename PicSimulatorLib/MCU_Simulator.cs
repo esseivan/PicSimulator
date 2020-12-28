@@ -11,34 +11,21 @@ namespace PicSimulatorLib
         protected Register[] registers;
         protected byte[] program;
         protected IO[] gpios;
+        protected byte wreg = 0;
 
-        private int registerPerBank = -1, bankCount = -1;
+        protected byte addrBits => 0;
+        protected byte bankBits => 0;
+        protected short bankLength => 0;
+        protected byte bankCount => 0;
 
-        // Pour les bank et addresses :
-        /* Indiquer combien de bits utilisés (12 pour 1827)
-         * Indiquer combien de bits pour le bank
-         * Indiquer combien de bits pour l'adresse
-         * Indiquer le nombre de banks
-         * Indiquer les bytes par bank
-         * 
-         * Donc :
-         * Indiquer nombre total data memory
-         * Indiquer le nombre de bank 
-         * 
-         * On fait :
-         * total / banks = 
-         * 
-         * 
-         * 
-         * 
-         */
-
-        private void PopulateRegisters(int bankCount, int registerPerBank)
+        public int GetBank(int addr)
         {
-            this.bankCount = bankCount;
-            this.registerPerBank = registerPerBank;
+            return (addr >> addrBits) & (int)(Math.Pow(2, bankBits) - 1);
+        }
 
-            registers = new Register[bankCount * registerPerBank];
+        public int GetShortAddr(int addr)
+        {
+            return addr & (int)(Math.Pow(2, addrBits) - 1);
         }
     }
 }
