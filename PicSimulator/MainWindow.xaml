@@ -4,9 +4,37 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PicSimulator"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:lib="clr-namespace:PicSimulatorLib;assembly=PicSimulatorLib"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open" Click="MenuItemOpen_Click"/>
+                <MenuItem Header="_Quit"/>
+            </MenuItem>
+        </Menu>
+        <Grid>
+            <ListBox x:Name="TestList"  SelectionMode="Multiple">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="Gray" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Value}" Foreground="Red" Width="40"/>
+                                <TextBlock Text="{Binding}" Foreground="Red" Margin="5"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                <ListBox.Items>
+                    <lib:Instruction Value="0x3180" />
+                    <sys:String>Jim</sys:String>
+                    <sys:String>Dave</sys:String>
+                    <sys:String>Larry</sys:String>
+                    <sys:String>Tom</sys:String>
+                </ListBox.Items>
+            </ListBox>
+        </Grid>
+    </DockPanel>
 </Window>

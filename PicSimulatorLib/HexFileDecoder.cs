@@ -91,14 +91,14 @@ namespace PicSimulatorLib
             return data;
         }
 
+        public static Dictionary<long, Instruction> GetInstructions(string filepath)
+        {
+            return GetInstructions(Decode(filepath));
+        }
+
         public static Dictionary<long, Instruction> GetInstructions(Dictionary<long, short> data)
         {
             return data.ToDictionary((x) => x.Key, (x) => new Instruction(x.Value));
-        }
-
-        public static Dictionary<long, string> GetNames(Dictionary<long, Instruction> data)
-        {
-            return data.ToDictionary((x) => x.Key, (x) => x.Value.GetCommandName());
         }
 
         private static short[] DecodeData(string dataString, byte dataCount)

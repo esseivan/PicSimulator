@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using PicSimulatorLib;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,11 +21,44 @@ namespace PicSimulator
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        public Dictionary<long, Instruction> code { get; set; }
+
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = this;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void OpenFile()
+        {
+            OpenFileDialog ofd = new OpenFileDialog()
+            {
+                Title = "Load hex file",
+                Filter = "Hex file (*.hex)|*.hex|All files (*.*)|*.*",
+                FilterIndex = 0,
+            };
+
+            if (ofd.ShowDialog() == true)
+            {
+                code = HexFileDecoder.GetInstructions(ofd.FileName);
+                OnPropertyChanged("code");
+
+
+            }
+        }
+
+        private void MenuItemOpen_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFile();
         }
     }
 }

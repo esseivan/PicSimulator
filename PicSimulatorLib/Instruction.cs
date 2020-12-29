@@ -6,156 +6,256 @@ using System.Threading.Tasks;
 
 namespace PicSimulatorLib
 {
-	public class Instruction
-	{
-		public short Value;
+    public class Instruction
+    {
+        public const byte InstructionCodeBits = 14;
 
-		public InstructionCode Code;
-		public byte Param1 = 0;
-		public byte Param2 = 0;
+        private short value;
+        private InstructionCode code;
+        private byte p1, p2, p = 0;
 
-		public Instruction(short value)
-		{
-			Value = value;
-		}
+        public short Value
+        {
+            get
+            {
+                return value;
+            }
+            set
+            {
+                this.value = value;
+                code = DecodeInstruction();
+                GetParameters();
+            }
+        }
 
-		public enum InstructionCode
-		{
-			NOP = 0,
+        public InstructionCode Code { get => code; }
+        public byte Parameter1 { get => p1; }
+        public byte Parameter2 { get => p2; }
 
-			// Byte oriented (00 xxxx dfff ffff)
-			// MASK 0x3F00
-			CLRW = 0b00000100000000,
-			SUBWF = 0b00001000000000,
-			DECF = 0b00001100000000,
-			IORWF = 0b00010000000000,
-			ANDWF = 0b00010100000000,
-			XORWF = 0b00011000000000,
-			ADDWF = 0b00011100000000,
-			MOVF = 0b00100000000000,
-			COMF = 0b00100100000000,
-			INCF = 0b00101000000000,
-			DECFSZ = 0b00101100000000,
-			RRF = 0b00110000000000,
-			RLF = 0b00110100000000,
-			SWAPF = 0b00111000000000,
-			INCFSZ = 0b00111100000000,
-			// MASK 0x3F80
-			CLRF = 0b00000100000000,
-			MOVWF = 0b00000010000000,
+        public Instruction() { }
 
-			// Bit-Oriented (01 xxbb bfff ffff)
+        public Instruction(short value)
+        {
+            Value = value;
+        }
 
-			// Literal and Control (
+        public enum InstructionCode
+        {
+            // Byte oriented file register operation (xx xxxx dfff ffff)
+            ADDWF = 0b00011100000000,
+            ADDWFC = 0b11110100000000,
+            ANDWF = 0b00010100000000,
+            ASRF = 0b11011100000000,
+            LSLF = 0b11010100000000,
+            LSRF = 0b11011000000000,
+            CLRF = 0b00000110000000,
+            CLRW = 0b00000100000000,
+            COMF = 0b00100100000000,
+            DECF = 0b00001100000000,
+            INCF = 0b00101000000000,
+            IORWF = 0b00010000000000,
+            MOVF = 0b00100000000000,
+            MOVWF = 0b00000010000000,
+            RLF = 0b00110100000000,
+            RRF = 0b00110000000000,
+            SUBWF = 0b00001000000000,
+            SUBWFB = 0b11101100000000,
+            SWAPF = 0b00111000000000,
+            XORWF = 0b00011000000000,
 
+            // Byte oriented skip operation (xx xxxx dfff ffff)
+            DECFSZ = 0b00101100000000,
+            INCFSZ = 0b00111100000000,
 
-		}
+            // Bit oriented file register operation (xx xxbb bfff ffff)
+            BCF = 0b01000000000000,
+            BSF = 0b01010000000000,
 
-		public string GetCommandName()
-		{
-			// <n1:2> <n2:4> <n3:4> <n4:4>
-			short temp = Value;
-			byte n4 = (byte)(temp & 0xFF); temp >>= 4;
-			byte n3 = (byte)(temp & 0xFF); temp >>= 4;
-			byte n2 = (byte)(temp & 0xFF); temp >>= 4;
-			byte n1 = (byte)(temp & 0xFF);
+            // Bit oriented skip operation (xx xxbb bfff ffff)
+            BTFSC = 0b01100000000000,
+            BTFSS = 0b01110000000000,
 
-			byte d = (byte)((n3 >> 3) & 0b1);
-			byte f = (byte)(Value & 0x7F);
-			byte b = (byte)((Value >> 7) & 0b111);
+            // Literal operations (xx xxxx kkkk kkkk)
+            ADDLW = 0b11111000000000,
+            ANDLW = 0b11100100000000,
+            IORLW = 0b11100000000000,
+            MOVLB = 0b00000000100000,
+            MOVLP = 0b11000110000000,
+            MOVLW = 0b11000000000000,
+            SUBLW = 0b11110000000000,
+            XORLW = 0b11101000000000,
 
-			if (n1 == 0x00)
-			{
+            // Control operations (xx xkkk kkkk kkkk)
+            BRA = 0b11001000000000,
+            BRW = 0b00000000001011,
+            CALL = 0b10000000000000,
+            CALLW = 0b00000000001010,
+            GOTO = 0b10100000000000,
+            RETFIE = 0b00000000001001,
+            RETLW = 0b11010000000000,
+            RETURN = 0b00000000001000,
 
+            // Inherent operations (xx xxxx xxxx xfff)
+            CLRWDT = 0b00000001100100,
+            NOP = 0b00000000000000,
+            OPTION = 0b00000001100010,
+            RESET = 0b00000000000001,
+            SLEEP = 0b00000001100011,
+            TRIS = 0b00000001100000,
 
+            // C-Compiler optimized
+            ADDFSR = 0b11000100000000,
+            MOVIW = 0b00000000010000,
+            MOVIW2 = 0b11111100000000,
+            MOVWI = 0b00000000011000,
+            MOVWI2 = 0b11111110000000,
+        }
 
-			}
+        public InstructionCode DecodeInstruction()
+        {
+            short temp = Value;
+            short mask = 0;
+            byte c = 0;
+            while (!Enum.IsDefined(typeof(InstructionCode), (InstructionCode)temp))
+            {
+                mask <<= 1; mask |= 1;
+                if (++c >= InstructionCodeBits)
+                    return (InstructionCode)Value;
+                temp |= mask; temp -= mask;
+            }
+            return (InstructionCode)temp;
+        }
 
-			// Byte oriented
-			if ((Value & 0x3000) == 0x00)
-			{
-				short cmd = (short)(Value & 0xFFF);
-				InstructionCode cmdCode = (InstructionCode)(cmd >> 8);
-				byte lowerByte = (byte)(cmd & 0xFF);
-				byte destCode = (byte)((cmd >> 7) & 0x01);
-				byte regCode = (byte)(cmd & 0x7F);
+        public void GetParameters()
+        {
+            switch (code)
+            {
+                case InstructionCode.ADDWF:
+                case InstructionCode.ADDWFC:
+                case InstructionCode.ANDWF:
+                case InstructionCode.ASRF:
+                case InstructionCode.LSLF:
+                case InstructionCode.LSRF:
+                case InstructionCode.COMF:
+                case InstructionCode.DECF:
+                case InstructionCode.INCF:
+                case InstructionCode.IORWF:
+                case InstructionCode.MOVF:
+                case InstructionCode.RLF:
+                case InstructionCode.RRF:
+                case InstructionCode.SUBWF:
+                case InstructionCode.SUBWFB:
+                case InstructionCode.SWAPF:
+                case InstructionCode.XORWF:
+                case InstructionCode.DECFSZ:
+                case InstructionCode.INCFSZ:
+                    p = 2;
+                    p1 = (byte)GetBits(0, 7);
+                    p2 = (byte)GetBits(7, 1);
+                    break;
 
-				string output = cmdCode.ToString();
+                case InstructionCode.CLRF:
+                case InstructionCode.MOVWF:
+                    p = 1;
+                    p1 = (byte)GetBits(0, 7);
+                    break;
 
-				bool f = true, d = true;
+                    break;
 
-				switch (cmdCode)
-				{
-					case InstructionCode.CLR:
-						d = false;
-						if (destCode == 1)
-						{
-							output = "CLRF";
-						}
-						else
-						{
-							output = "CLRW";
-							f = false;
-						}
-						break;
+                case InstructionCode.BCF:
+                case InstructionCode.BSF:
+                case InstructionCode.BTFSC:
+                case InstructionCode.BTFSS:
+                    p = 2;
+                    p1 = (byte)GetBits(0, 7);
+                    p2 = (byte)GetBits(7, 3);
+                    break;
 
-					case InstructionCode.MOVWF:
-						// Further inspection
-						d = false;
-						if (destCode == 1)
-						{
-							output = cmdCode.ToString();
-						}
-						else
-						{
-							f = false;
-							if ((regCode & 0b10011111) == 0x00)
-								output = "NOP";
-							else if (regCode == 0x64)
-								output = "CLRWDT";
-							else if (regCode == 0x09)
-								output = "RETFIE";
-							else if (regCode == 0x63)
-								output = "SLEEP";
-							else
-								return "Unknown : " + Value.ToString("X4");
-						}
+                case InstructionCode.ADDLW:
+                case InstructionCode.ANDLW:
+                case InstructionCode.IORLW:
+                case InstructionCode.MOVLW:
+                case InstructionCode.SUBLW:
+                case InstructionCode.XORLW:
+                case InstructionCode.RETLW:
+                    p = 1;
+                    p1 = (byte)GetBits(0, 8);
+                    break;
 
-						break;
+                case InstructionCode.MOVLB:
+                    p = 1;
+                    p1 = (byte)GetBits(0, 5);
+                    break;
 
-					default:
-						return "0x" + Value.ToString("X4");
-				}
+                case InstructionCode.MOVLP:
+                    p = 1;
+                    p1 = (byte)GetBits(0, 7);
+                    break;
 
-				if (f)
-				{
-					output = $"{output}\t{regCode}";
-				}
-				if (d)
-				{
-					output = $"{output}\t{destCode}";
-				}
+                case InstructionCode.BRA:
+                    p = 1;
+                    p1 = (byte)GetBits(0, 9);
+                    break;
 
+                case InstructionCode.CALL:
+                case InstructionCode.GOTO:
+                    p = 1;
+                    p1 = (byte)GetBits(0, 11);
+                    break;
 
-				return output;
-			}
-			else if ((Value & 0x3000) == 0x1000)
-			{
-				return "0x" + Value.ToString("X4");
-			}
-			else
-			{
-				return "0x" + Value.ToString("X4");
-			}
-		}
+                case InstructionCode.TRIS:
+                    p = 1;
+                    p1 = (byte)GetBits(0, 3);
+                    break;
 
-		public short GetKValue(byte bits)
-		{
-			if (bits > 16)
-				throw new ArgumentOutOfRangeException("bits");
-			return (byte)(Value & (byte)(Math.Pow(2, bits) - 1));
-		}
+                case InstructionCode.ADDFSR:
+                case InstructionCode.MOVIW2:
+                case InstructionCode.MOVWI2:
+                    p = 2;
+                    p1 = (byte)GetBits(0, 6);
+                    p2 = (byte)GetBits(6, 1);
+                    break;
 
+                case InstructionCode.MOVIW:
+                case InstructionCode.MOVWI:
+                    p = 2;
+                    p1 = (byte)GetBits(0, 2);
+                    p2 = (byte)GetBits(2, 1);
+                    break;
 
-	}
+                default:
+                    p = 0;
+                    break;
+            }
+        }
+
+        public short GetKValue(byte bits)
+        {
+            if (bits > 16)
+                throw new ArgumentOutOfRangeException("bits");
+            return GetBits(0, bits);
+        }
+
+        public short GetBits(byte from, byte count)
+        {
+            if (count < 1)
+                throw new ArgumentOutOfRangeException("count");
+
+            if (from < 0)
+                throw new ArgumentOutOfRangeException("from");
+
+            return (short)((value >> from) & ((int)Math.Pow(2, count) - 1));
+        }
+
+        public override string ToString()
+        {
+            string output = $"{code,6}";
+            if (p > 0)
+                output += $"\t{p1,-4}";
+            if (p > 1)
+                output += $"\t{p2,-4}";
+
+            return output;
+        }
+    }
 }
