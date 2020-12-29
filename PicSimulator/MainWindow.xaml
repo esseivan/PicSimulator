@@ -7,34 +7,82 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:lib="clr-namespace:PicSimulatorLib;assembly=PicSimulatorLib"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_Open" Click="MenuItemOpen_Click"/>
-                <MenuItem Header="_Quit"/>
-            </MenuItem>
-        </Menu>
-        <Grid>
-            <ListBox x:Name="TestList"  SelectionMode="Multiple">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Border BorderBrush="Gray" BorderThickness="1">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Value}" Foreground="Red" Width="40"/>
-                                <TextBlock Text="{Binding}" Foreground="Red" Margin="5"/>
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-                <ListBox.Items>
-                    <lib:Instruction Value="0x3180" />
-                    <sys:String>Jim</sys:String>
-                    <sys:String>Dave</sys:String>
-                    <sys:String>Larry</sys:String>
-                    <sys:String>Tom</sys:String>
-                </ListBox.Items>
-            </ListBox>
-        </Grid>
-    </DockPanel>
+        Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
+	<DockPanel>
+		<Menu DockPanel.Dock="Top">
+			<MenuItem Header="_File">
+				<MenuItem Header="_Open" Click="MenuItemOpen_Click"/>
+				<MenuItem Header="_Quit"/>
+			</MenuItem>
+		</Menu>
+		<Grid>
+			<!--<ListBox x:Name="TestList" SelectionMode="Multiple">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<Border BorderBrush="LightGray" BorderThickness="0">
+							<StackPanel Orientation="Vertical">
+								<StackPanel Orientation="Horizontal" Margin="0">
+									<TextBlock Text="{Binding Address}" TextAlignment="Right" Width="30" Margin="0 0 5 0"/>
+									<Border BorderThickness="1" BorderBrush="LightGray" Width="1" />
+									<TextBlock Text="{Binding Value, StringFormat=X4}" Margin="5 0 5 0" Width="30"/>
+									<Border BorderThickness="1" BorderBrush="LightGray" Width="1" />
+									<TextBlock Text="{Binding}" Margin="5 0 0 0" Width="100"/>
+								</StackPanel>
+								<Border BorderBrush="LightGray" BorderThickness="1" Height="1" />
+							</StackPanel>
+						</Border>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+				<ListBox.Items>
+					<sys:String Value="Offset">Addr Offset</sys:String>
+					<lib:Instruction Value="0x3180" Address="0"/>
+					<lib:Instruction Value="0x3180" Address="0"/>
+					<lib:Instruction Value="0x3180" Address="1"/>
+					<lib:Instruction Value="0x3180" Address="2"/>
+					<lib:Instruction Value="0x3180" Address="3"/>
+					<lib:Instruction Value="0x3180" Address="4"/>
+				</ListBox.Items>
+			</ListBox>
+			-->
+
+			<ListView x:Name="listCode" SelectionMode="Single" ItemsSource="{Binding instructions}" FontFamily="Courier New">
+				<ListView.View>
+					<GridView>
+						<GridView.Columns>
+							<GridViewColumn>
+								<GridViewColumn.CellTemplate>
+									<DataTemplate>
+										<TextBlock Text="{Binding Address}"/>
+									</DataTemplate>
+								</GridViewColumn.CellTemplate>
+								<GridViewColumn.Header>
+									<TextBlock Text="Column 1" />
+								</GridViewColumn.Header>
+							</GridViewColumn>
+							<GridViewColumn>
+								<GridViewColumn.CellTemplate>
+									<DataTemplate>
+										<TextBlock Text="{Binding Value, StringFormat=X4}"/>
+									</DataTemplate>
+								</GridViewColumn.CellTemplate>
+								<GridViewColumn.Header>
+									<TextBlock Text="Column 2" />
+								</GridViewColumn.Header>
+							</GridViewColumn>
+							<GridViewColumn>
+								<GridViewColumn.CellTemplate>
+									<DataTemplate>
+										<TextBlock Text="{Binding}" />
+									</DataTemplate>
+								</GridViewColumn.CellTemplate>
+								<GridViewColumn.Header>
+									<TextBlock Text="Column 3" />
+								</GridViewColumn.Header>
+							</GridViewColumn>
+						</GridView.Columns>
+					</GridView>
+				</ListView.View>
+			</ListView>
+		</Grid>
+	</DockPanel>
 </Window>

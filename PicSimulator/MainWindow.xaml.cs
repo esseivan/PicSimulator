@@ -3,6 +3,7 @@ using PicSimulatorLib;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,47 +19,55 @@ using System.Windows.Shapes;
 
 namespace PicSimulator
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window, INotifyPropertyChanged
-    {
-        public Dictionary<long, Instruction> code { get; set; }
+	/// <summary>
+	/// Interaction logic for MainWindow.xaml
+	/// </summary>
+	public partial class MainWindow : Window, INotifyPropertyChanged
+	{
+		public Dictionary<long, Instruction> code { get; set; }
 
-        public MainWindow()
-        {
-            InitializeComponent();
-            DataContext = this;
-        }
+		public IEnumerable<Instruction> instructions => code?.Values;
 
-        public event PropertyChangedEventHandler PropertyChanged;
+		public MainWindow()
+		{
+			InitializeComponent();
+			DataContext = this;
+		}
 
-        public void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+		public event PropertyChangedEventHandler PropertyChanged;
 
-        private void OpenFile()
-        {
-            OpenFileDialog ofd = new OpenFileDialog()
-            {
-                Title = "Load hex file",
-                Filter = "Hex file (*.hex)|*.hex|All files (*.*)|*.*",
-                FilterIndex = 0,
-            };
+		public void OnPropertyChanged(string propertyName)
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
 
-            if (ofd.ShowDialog() == true)
-            {
-                code = HexFileDecoder.GetInstructions(ofd.FileName);
-                OnPropertyChanged("code");
+		private void OpenFile()
+		{
+			OpenFileDialog ofd = new OpenFileDialog()
+			{
+				Title = "Load hex file",
+				Filter = "Hex file (*.hex)|*.hex|All files (*.*)|*.*",
+				FilterIndex = 0,
+			};
 
+			if (ofd.ShowDialog() == true)
+			{
+				code = HexFileDecoder.GetInstructions(ofd.FileName);
+				OnPropertyChanged("instructions");
+				//listCode.ItemsSource = instructions;
+				Console.WriteLine(string.Join(Environment.NewLine, instructions));
 
-            }
-        }
+			}
+		}
 
-        private void MenuItemOpen_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFile();
-        }
-    }
+		private void MenuItemOpen_Click(object sender, RoutedEventArgs e)
+		{
+			OpenFile();
+		}
+
+		private void Window_Loaded(object sender, RoutedEventArgs e)
+		{
+
+		}
+	}
 }

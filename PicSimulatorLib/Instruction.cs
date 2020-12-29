@@ -14,6 +14,8 @@ namespace PicSimulatorLib
         private InstructionCode code;
         private byte p1, p2, p = 0;
 
+        public long Address { get; set; }
+
         public short Value
         {
             get
@@ -37,6 +39,11 @@ namespace PicSimulatorLib
         public Instruction(short value)
         {
             Value = value;
+        }
+
+        public Instruction(short value, long address) : this(value)
+        {
+            this.Address = address;
         }
 
         public enum InstructionCode
@@ -251,9 +258,9 @@ namespace PicSimulatorLib
         {
             string output = $"{code,6}";
             if (p > 0)
-                output += $"\t{p1,-4}";
+                output += $"    {p1,-4}";
             if (p > 1)
-                output += $"\t{p2,-4}";
+                output += $"    {p2,-4}";
 
             return output;
         }
