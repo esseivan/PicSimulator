@@ -49,13 +49,12 @@ namespace PicSimulator
 				Filter = "Hex file (*.hex)|*.hex|All files (*.*)|*.*",
 				FilterIndex = 0,
 			};
-
+			
 			if (ofd.ShowDialog() == true)
 			{
 				code = HexFileDecoder.GetInstructions(ofd.FileName);
 				OnPropertyChanged("instructions");
-				//listCode.ItemsSource = instructions;
-				Console.WriteLine(string.Join(Environment.NewLine, instructions));
+				listCode.UpdateLayout();
 
 			}
 		}

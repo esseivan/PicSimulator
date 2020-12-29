@@ -45,44 +45,49 @@
 			</ListBox>
 			-->
 
-			<ListView x:Name="listCode" SelectionMode="Single" ItemsSource="{Binding instructions}" FontFamily="Courier New">
+			<ListView x:Name="listCode" SelectionMode="Single" ItemsSource="{Binding instructions}" FontFamily="Courier New" >
 				<ListView.View>
 					<GridView>
 						<GridView.Columns>
 							<GridViewColumn>
-								<GridViewColumn.CellTemplate>
-									<DataTemplate>
-										<TextBlock Text="{Binding Address}"/>
-									</DataTemplate>
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Address}" TextAlignment="Right" />
+                                    </DataTemplate>
 								</GridViewColumn.CellTemplate>
-								<GridViewColumn.Header>
-									<TextBlock Text="Column 1" />
-								</GridViewColumn.Header>
-							</GridViewColumn>
+                                <GridViewColumn.Header>
+                                    <TextBlock Text="Address" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
 							<GridViewColumn>
 								<GridViewColumn.CellTemplate>
 									<DataTemplate>
-										<TextBlock Text="{Binding Value, StringFormat=X4}"/>
-									</DataTemplate>
+                                        <TextBlock Text="{Binding Value, StringFormat=X4}" TextAlignment="Center"/>
+                                    </DataTemplate>
 								</GridViewColumn.CellTemplate>
 								<GridViewColumn.Header>
-									<TextBlock Text="Column 2" />
+									<TextBlock Text="Opcode" />
 								</GridViewColumn.Header>
 							</GridViewColumn>
-							<GridViewColumn>
+							<GridViewColumn Width="150">
 								<GridViewColumn.CellTemplate>
 									<DataTemplate>
-										<TextBlock Text="{Binding}" />
+										<TextBlock Text="{Binding}" TextAlignment="Left"/>
 									</DataTemplate>
 								</GridViewColumn.CellTemplate>
 								<GridViewColumn.Header>
-									<TextBlock Text="Column 3" />
+									<TextBlock Text="Mnemonic" />
 								</GridViewColumn.Header>
 							</GridViewColumn>
 						</GridView.Columns>
-					</GridView>
-				</ListView.View>
-			</ListView>
+                    </GridView>
+                </ListView.View>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
 		</Grid>
 	</DockPanel>
 </Window>

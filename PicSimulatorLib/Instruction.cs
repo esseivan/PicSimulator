@@ -258,9 +258,9 @@ namespace PicSimulatorLib
         {
             string output = $"{code,6}";
             if (p > 0)
-                output += $"    {p1,-4}";
+                output += $"    {p1}";
             if (p > 1)
-                output += $"    {p2,-4}";
+                output += $",{p2}";
 
             return output;
         }
