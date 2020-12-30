@@ -32,7 +32,7 @@ namespace PicSimulatorLib
 
                 byte dataCount = Convert.ToByte(line.Substring(index, 2), 16);
                 index += 2;
-                short addr = Convert.ToInt16(line.Substring(index, 4), 16);
+                short addr = (short)(Convert.ToInt16(line.Substring(index, 4), 16) >> 1);
                 index += 4;
                 byte type = Convert.ToByte(line.Substring(index, 2), 16);
                 index += 2;
@@ -71,7 +71,7 @@ namespace PicSimulatorLib
                         if (dataCount != 2)
                             throw new Exception("Invalid file format");
                         dataShort = Convert.ToInt16(dataString, 16);
-                        addrOffset = dataShort << 4;
+                        addrOffset = dataShort << (4-1);
                         break;
 
                     case 04:
@@ -80,7 +80,7 @@ namespace PicSimulatorLib
                         if (dataCount != 2)
                             throw new Exception("Invalid file format");
                         dataShort = Convert.ToInt16(dataString, 16);
-                        addrOffset = dataShort << 16;
+                        addrOffset = dataShort << (16-1);
                         break;
 
                     default:

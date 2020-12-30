@@ -12,7 +12,7 @@ namespace PicSimulatorLib
 
         private short value;
         private InstructionCode code;
-        private byte p1, p2, p = 0;
+        private short p1, p2, p = 0;
 
         public long Address { get; set; }
 
@@ -31,8 +31,27 @@ namespace PicSimulatorLib
         }
 
         public InstructionCode Code { get => code; }
-        public byte Parameter1 { get => p1; }
-        public byte Parameter2 { get => p2; }
+        public short Parameter1 { get => p1; }
+        public short Parameter2 { get => p2; }
+
+        private bool hasComment = false;
+        public string Comment { get; set; } = string.Empty;
+        public void AddComment(string comment)
+        {
+            this.Comment += $"{(hasComment ? " " : "")}{comment}";
+            hasComment = true;
+        }
+
+        public string Label { get; set; }
+
+        private static int labelCtr = 1;
+        public string SetLabelName(bool index = false)
+        {
+            Label = "L";
+            if (index)
+                Label += (labelCtr++).ToString();
+            return Label;
+        }
 
         public Instruction() { }
 
@@ -157,16 +176,14 @@ namespace PicSimulatorLib
                 case InstructionCode.DECFSZ:
                 case InstructionCode.INCFSZ:
                     p = 2;
-                    p1 = (byte)GetBits(0, 7);
-                    p2 = (byte)GetBits(7, 1);
+                    p1 = GetBits(0, 7);
+                    p2 = GetBits(7, 1);
                     break;
 
                 case InstructionCode.CLRF:
                 case InstructionCode.MOVWF:
                     p = 1;
-                    p1 = (byte)GetBits(0, 7);
-                    break;
-
+                    p1 = GetBits(0, 7);
                     break;
 
                 case InstructionCode.BCF:
@@ -174,8 +191,8 @@ namespace PicSimulatorLib
                 case InstructionCode.BTFSC:
                 case InstructionCode.BTFSS:
                     p = 2;
-                    p1 = (byte)GetBits(0, 7);
-                    p2 = (byte)GetBits(7, 3);
+                    p1 = GetBits(0, 7);
+                    p2 = GetBits(7, 3);
                     break;
 
                 case InstructionCode.ADDLW:
@@ -186,48 +203,48 @@ namespace PicSimulatorLib
                 case InstructionCode.XORLW:
                 case InstructionCode.RETLW:
                     p = 1;
-                    p1 = (byte)GetBits(0, 8);
+                    p1 = GetBits(0, 8);
                     break;
 
                 case InstructionCode.MOVLB:
                     p = 1;
-                    p1 = (byte)GetBits(0, 5);
+                    p1 = GetBits(0, 5);
                     break;
 
                 case InstructionCode.MOVLP:
                     p = 1;
-                    p1 = (byte)GetBits(0, 7);
+                    p1 = GetBits(0, 7);
                     break;
 
                 case InstructionCode.BRA:
                     p = 1;
-                    p1 = (byte)GetBits(0, 9);
+                    p1 = GetBits(0, 9);
                     break;
 
                 case InstructionCode.CALL:
                 case InstructionCode.GOTO:
                     p = 1;
-                    p1 = (byte)GetBits(0, 11);
+                    p1 = GetBits(0, 11);
                     break;
 
                 case InstructionCode.TRIS:
                     p = 1;
-                    p1 = (byte)GetBits(0, 3);
+                    p1 = GetBits(0, 3);
                     break;
 
                 case InstructionCode.ADDFSR:
                 case InstructionCode.MOVIW2:
                 case InstructionCode.MOVWI2:
                     p = 2;
-                    p1 = (byte)GetBits(0, 6);
-                    p2 = (byte)GetBits(6, 1);
+                    p1 = GetBits(0, 6);
+                    p2 = GetBits(6, 1);
                     break;
 
                 case InstructionCode.MOVIW:
                 case InstructionCode.MOVWI:
                     p = 2;
-                    p1 = (byte)GetBits(0, 2);
-                    p2 = (byte)GetBits(2, 1);
+                    p1 = GetBits(0, 2);
+                    p2 = GetBits(2, 1);
                     break;
 
                 default:

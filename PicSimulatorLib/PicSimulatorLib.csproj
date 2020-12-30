@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="HexFileDecoder.cs" />
     <Compile Include="Instruction.cs" />
+    <Compile Include="InstructionSet.cs" />
     <Compile Include="IO.cs" />
     <Compile Include="MCU_Modules\Generator.cs" />
     <Compile Include="MCU_Modules\MCU_PIC16F1827.cs" />

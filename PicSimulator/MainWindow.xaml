@@ -8,78 +8,69 @@
         xmlns:lib="clr-namespace:PicSimulatorLib;assembly=PicSimulatorLib"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
-	<DockPanel>
-		<Menu DockPanel.Dock="Top">
-			<MenuItem Header="_File">
-				<MenuItem Header="_Open" Click="MenuItemOpen_Click"/>
-				<MenuItem Header="_Quit"/>
-			</MenuItem>
-		</Menu>
-		<Grid>
-			<!--<ListBox x:Name="TestList" SelectionMode="Multiple">
-				<ListBox.ItemTemplate>
-					<DataTemplate>
-						<Border BorderBrush="LightGray" BorderThickness="0">
-							<StackPanel Orientation="Vertical">
-								<StackPanel Orientation="Horizontal" Margin="0">
-									<TextBlock Text="{Binding Address}" TextAlignment="Right" Width="30" Margin="0 0 5 0"/>
-									<Border BorderThickness="1" BorderBrush="LightGray" Width="1" />
-									<TextBlock Text="{Binding Value, StringFormat=X4}" Margin="5 0 5 0" Width="30"/>
-									<Border BorderThickness="1" BorderBrush="LightGray" Width="1" />
-									<TextBlock Text="{Binding}" Margin="5 0 0 0" Width="100"/>
-								</StackPanel>
-								<Border BorderBrush="LightGray" BorderThickness="1" Height="1" />
-							</StackPanel>
-						</Border>
-					</DataTemplate>
-				</ListBox.ItemTemplate>
-				<ListBox.Items>
-					<sys:String Value="Offset">Addr Offset</sys:String>
-					<lib:Instruction Value="0x3180" Address="0"/>
-					<lib:Instruction Value="0x3180" Address="0"/>
-					<lib:Instruction Value="0x3180" Address="1"/>
-					<lib:Instruction Value="0x3180" Address="2"/>
-					<lib:Instruction Value="0x3180" Address="3"/>
-					<lib:Instruction Value="0x3180" Address="4"/>
-				</ListBox.Items>
-			</ListBox>
-			-->
-
-			<ListView x:Name="listCode" SelectionMode="Single" ItemsSource="{Binding instructions}" FontFamily="Courier New" >
-				<ListView.View>
-					<GridView>
-						<GridView.Columns>
-							<GridViewColumn>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open" Click="MenuItemOpen_Click"/>
+                <MenuItem Header="_Quit"/>
+            </MenuItem>
+        </Menu>
+        <Grid>
+            <ListView x:Name="listCode" SelectionMode="Single" ItemsSource="{Binding Instructions}" FontFamily="Courier New" >
+                <ListView.View>
+                    <GridView>
+                        <GridView.Columns>
+                            <GridViewColumn>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Address}" TextAlignment="Right" />
                                     </DataTemplate>
-								</GridViewColumn.CellTemplate>
+                                </GridViewColumn.CellTemplate>
                                 <GridViewColumn.Header>
                                     <TextBlock Text="Address" />
                                 </GridViewColumn.Header>
                             </GridViewColumn>
-							<GridViewColumn>
-								<GridViewColumn.CellTemplate>
-									<DataTemplate>
+                            <GridViewColumn>
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
                                         <TextBlock Text="{Binding Value, StringFormat=X4}" TextAlignment="Center"/>
                                     </DataTemplate>
-								</GridViewColumn.CellTemplate>
-								<GridViewColumn.Header>
-									<TextBlock Text="Opcode" />
-								</GridViewColumn.Header>
-							</GridViewColumn>
-							<GridViewColumn Width="150">
-								<GridViewColumn.CellTemplate>
-									<DataTemplate>
-										<TextBlock Text="{Binding}" TextAlignment="Left"/>
-									</DataTemplate>
-								</GridViewColumn.CellTemplate>
-								<GridViewColumn.Header>
-									<TextBlock Text="Mnemonic" />
-								</GridViewColumn.Header>
-							</GridViewColumn>
-						</GridView.Columns>
+                                </GridViewColumn.CellTemplate>
+                                <GridViewColumn.Header>
+                                    <TextBlock Text="Opcode [Hex]" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn Width="50">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Label}" TextAlignment="Center"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                                <GridViewColumn.Header>
+                                    <TextBlock Text="Label" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn Width="150">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" TextAlignment="Left"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                                <GridViewColumn.Header>
+                                    <TextBlock Text="Mnemonic" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn Width="150">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Comment}" TextAlignment="Left"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                                <GridViewColumn.Header>
+                                    <TextBlock Text="Comment" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                        </GridView.Columns>
                     </GridView>
                 </ListView.View>
                 <ListView.ItemContainerStyle>
@@ -88,6 +79,6 @@
                     </Style>
                 </ListView.ItemContainerStyle>
             </ListView>
-		</Grid>
-	</DockPanel>
+        </Grid>
+    </DockPanel>
 </Window>
