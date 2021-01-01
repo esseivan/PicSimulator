@@ -15,7 +15,11 @@ namespace PicSimulatorLib
         public byte UnimplementedMaskInvert => (byte)(0xff - UnimplementedMask);
         public byte ReadableMask = 0xff;
         public byte WritableMask = 0xff;
-        public byte Value => GetValue();
+        public byte Value
+        {
+            get => GetValue();
+            set => SetValue(value);
+        }
 
         public Register SyncRegister = null;
         public int SyncToAddr = SyncToAddr_None;
@@ -61,6 +65,11 @@ namespace PicSimulatorLib
             }
         }
 
+        public void AddValue(byte value)
+        {
+            SetValue((byte)(this.value + value));
+        }
+
         public byte GetValue()
         {
             if (SyncRegister != null)
@@ -80,6 +89,68 @@ namespace PicSimulatorLib
         public static explicit operator byte(Register t)
         {
             return t.GetValue();
+        }
+    }
+
+    public class StatusRegister : Register
+    {
+        public virtual bool C
+        {
+            get => (Value & BitMask(0)) > 0;
+            set => SetBit(0, value);
+        }
+        public virtual bool DC
+        {
+            get => (Value & BitMask(1)) > 0;
+            set => SetBit(1, value);
+        }
+        public virtual bool Z
+        {
+            get => (Value & BitMask(2)) > 0;
+            set => SetBit(2, value);
+        }
+        public virtual bool N_PD
+        {
+            get => (Value & BitMask(3)) > 0;
+            set => SetBit(3, value);
+        }
+        public virtual bool N_TO
+        {
+            get => (Value & BitMask(4)) > 0;
+            set => SetBit(4, value);
+        }
+
+        public byte BitMask(byte i)
+        {
+            return (byte)(1 << i);
+        }
+
+        public byte NBitMask(byte i)
+        {
+            return (byte)(0xFF - (byte)(1 << i));
+        }
+
+        public void SetBit(byte i, bool value)
+        {
+            if (value)
+                this.Value |= BitMask(i);
+            else
+                this.Value &= NBitMask(i);
+        }
+
+        public static StatusRegister CopyFrom(Register reg)
+        {
+            StatusRegister sr = new StatusRegister()
+            {
+                Value = reg.Value,
+                ReadableMask = reg.ReadableMask,
+                SyncRegister = reg.SyncRegister,
+                SyncToAddr = reg.SyncToAddr,
+                UnimplementedMask = reg.UnimplementedMask,
+                WritableMask = reg.WritableMask,
+            };
+
+            return sr;
         }
     }
 }

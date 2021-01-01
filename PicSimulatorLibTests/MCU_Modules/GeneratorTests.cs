@@ -14,7 +14,7 @@ namespace PicSimulatorLib.Tests
         [TestMethod()]
         public void Generate_PIC16F1827_Test()
         {
-            MCU_Simulator mcu = Generator.GenerateSimulator(Generator.MCUReference.PIC16F1827);
+            MCU mcu = Generator.GenerateSimulator(Generator.MCUReference.PIC16F1827);
 
             Assert.IsTrue(mcu.GetType().IsEquivalentTo(typeof(MCU_PIC16F1827)));
         }

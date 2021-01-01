@@ -1,9 +1,11 @@
 ﻿using Microsoft.Win32;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using PicSimulatorLib;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +17,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace PicSimulator
 {
@@ -24,20 +25,77 @@ namespace PicSimulator
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private Settings settings;
+        private string appName = "PicSimulator";
+
         private InstructionSet iSet = new InstructionSet();
         public IEnumerable<Instruction> Instructions => iSet.Instructions.Values;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        private CommonOpenFileDialog ofd = null;
+
+        public void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
+
+            LoadSettings();
+            if (!string.IsNullOrEmpty(settings.MicrochipPath))
+            {
+                MCU.MicrochipProcPath = settings.MicrochipPath;
+            }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void OnPropertyChanged(string propertyName)
+        private void LoadSettings()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if (!EsseivaN.Tools.SettingManager_Fast.LoadAppName(appName, out settings))
+            {
+                settings = new Settings();
+                SaveSettings();
+            }
+        }
+
+        private void SaveSettings()
+        {
+            EsseivaN.Tools.SettingManager_Fast.SaveAppName(appName, settings, false, true);
+        }
+
+        private void SelectMicrochipFolder()
+        {
+            if (ofd == null)
+            {
+                ofd = new CommonOpenFileDialog()
+                {
+                    Title = "Select the Microchip processor folder",
+                    InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Microchip", "MPLABX"),
+                    IsFolderPicker = true,
+                };
+            }
+
+            if (ofd.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                // Search for the default one : pic16f1827.inc
+                string path = SearchForFile("pic16f1827.inc", ofd.FileName);
+                Console.WriteLine("Found path : '" + path + "'");
+            }
+        }
+
+        private string SearchForFile(string filename, string rootPath)
+        {
+            DirectoryInfo di = new DirectoryInfo(rootPath);
+            var files = di.GetFiles(filename, SearchOption.AllDirectories);
+            if (files.Length == 0)
+                return string.Empty;
+            if (files.Length == 1)
+                return files[0].FullName;
+
+            files.Select((x) => x.FullName).ToList().Sort();
+            return files[0].FullName;
         }
 
         private void OpenFile()
@@ -66,6 +124,16 @@ namespace PicSimulator
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void MenuItemLoad_Click(object sender, RoutedEventArgs e)
+        {
+            SelectMicrochipFolder();
+        }
+
+        private void MenuItemQuit_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
         }
     }
 }

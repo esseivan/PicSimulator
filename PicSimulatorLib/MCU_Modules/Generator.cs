@@ -14,7 +14,7 @@ namespace PicSimulatorLib
             PIC16F18334,
         }
 
-        public static MCU_Simulator GenerateSimulator(MCUReference reference)
+        public static MCU GenerateSimulator(MCUReference reference)
         {
             Type mcuType;
             try
@@ -28,14 +28,14 @@ namespace PicSimulatorLib
                 throw;
             }
 
-            if (!mcuType.IsSubclassOf(typeof(MCU_Simulator)))
+            if (!mcuType.IsSubclassOf(typeof(MCU)))
                 throw new ArgumentException("Type not supported");
 
             var constructor = mcuType.GetConstructor(Type.EmptyTypes);
             if (constructor == null)
                 throw new ArgumentException("Type not supported");
 
-            MCU_Simulator mcu = constructor.Invoke(null) as MCU_Simulator;
+            MCU mcu = constructor.Invoke(null) as MCU;
 
             return mcu;
         }

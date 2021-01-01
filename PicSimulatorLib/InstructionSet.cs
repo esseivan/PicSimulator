@@ -12,6 +12,8 @@ namespace PicSimulatorLib
 
         public Dictionary<long, Instruction> Instructions => instructions;
 
+        public Instruction this[long i] => instructions[i];
+
         public InstructionSet() { }
 
         public InstructionSet(Dictionary<long, short> instructions) : this(HexFileDecoder.GetInstructions(instructions)) { }
