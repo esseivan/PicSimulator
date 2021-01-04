@@ -27,6 +27,7 @@ namespace PicSimulatorLib
         {
             this.instructions = instructions;
             SetLabels();
+            DeterminePCLATHValues();
         }
 
         private void SetLabels()
@@ -46,6 +47,7 @@ namespace PicSimulatorLib
             }
 
             // Second pass, set the lower address the lower index
+            Instruction.ResetLabelCounter();
             foreach (var pair in instructions)
             {
                 if (pair.Value.Label == "L")
@@ -65,6 +67,25 @@ namespace PicSimulatorLib
                         throw new IndexOutOfRangeException("Destination to GOTO instruction not found : '" + pair.Value.ToString() + "'");
                     Instruction instructionDestination = instructions[destination];
                     pair.Value.AddComment("== " + instructionDestination.Label);
+                }
+            }
+        }
+
+        public void DeterminePCLATHValues()
+        {
+            // First pass, indicate that a label has to be set later
+            byte pcLatHVal = 0;
+            foreach (var pair in instructions)
+            {
+                if (pair.Value.Code == Instruction.InstructionCode.MOVLP)
+                {
+                    pcLatHVal = (byte)pair.Value.Parameter1;
+                }
+                else if (pair.Value.Code == Instruction.InstructionCode.CALL
+                  || pair.Value.Code == Instruction.InstructionCode.CALLW
+                  || pair.Value.Code == Instruction.InstructionCode.GOTO)
+                {
+                    pair.Value.AddComment($"PCLATH = {pcLatHVal:X2}h");
                 }
             }
         }

@@ -11,61 +11,74 @@ namespace PicSimulatorLib
         private MCU _mcu;
         public MCU MCU => _mcu;
 
-        public Status status = Status.Stopped;
+        public Status status = Status.Idle;
 
         public enum Status
         {
-            Stopped,
-            Started,
+            Idle,
+            AutoRun,
         }
 
         public Simulator(MCU mcu)
         {
             _mcu = mcu;
+            Reset();
         }
 
-        public void Start()
+        public void Reset()
         {
-            _mcu.PC = _mcu.ResetVector;
+            if (_mcu.NextInstruction != null)
+                _mcu.NextInstruction.IsNext = false;
+            _mcu.PC = _mcu.Settings.resetVector;
+            _mcu.NextInstruction.IsNext = true;
+        }
+
+        public void Run()
+        {
+
+        }
+
+        public void Stop()
+        {
+
         }
 
         public void Step()
         {
-            if (status == Status.Stopped)
-                throw new Exception("Simulation not started");
+            if (status != Status.Idle)
+                return;
 
-            ProcessInstruction();
+            ProcessInstruction(_mcu.NextInstruction);
         }
 
-        private void ProcessInstruction()
+        private void ProcessInstruction(Instruction ins)
         {
-            Instruction ins = _mcu.NextInstruction;
-
             // Check for interrupt
 
+
             byte f = (byte)ins.Parameter1;
+            short k_short = ins.Parameter1;
             byte dTemp = (byte)ins.Parameter2;
             byte b = (byte)ins.Parameter2;
             byte value = 0, value2 = 0, value3 = 0;
             bool carry;
             byte k = f;
-            if (dTemp < 0 || dTemp > 1)
-                throw new ArgumentOutOfRangeException("d");
             bool d = dTemp == 1;
+            bool incrementPC = true;
             switch (ins.Code)
             {
                 case Instruction.InstructionCode.ADDWF:
-                    value = (byte)(_mcu.WReg + _mcu.Data[f].Value);
+                    value = (byte)(_mcu.wreg + _mcu.Data[f].Value);
                     SetDestination(value, d, f, true);
                     break;
 
                 case Instruction.InstructionCode.ADDWFC:
-                    value = (byte)(_mcu.WReg + _mcu.Data[f].Value + (_mcu.Status.Value & 1));
+                    value = (byte)(_mcu.wreg + _mcu.Data[f].Value + (_mcu.Status.Value & 1));
                     SetDestination(value, d, f, true);
                     break;
 
                 case Instruction.InstructionCode.ANDWF:
-                    value = (byte)(_mcu.WReg & _mcu.Data[f].Value);
+                    value = (byte)(_mcu.wreg & _mcu.Data[f].Value);
                     SetDestination(value, d, f, true);
                     break;
 
@@ -93,12 +106,12 @@ namespace PicSimulatorLib
 
                 case Instruction.InstructionCode.CLRF:
                     value = (byte)(_mcu.Data[f].Value & 0x7F);
-                    Register reg = _mcu.GetRegister(value, _mcu.SelectedBank);
+                    Register reg = _mcu.Data[_mcu.Bank, value];
                     reg.SetValue(0);
                     break;
 
                 case Instruction.InstructionCode.CLRW:
-                    _mcu.WReg = 0;
+                    _mcu.wreg = 0;
                     break;
 
                 case Instruction.InstructionCode.COMF:
@@ -117,7 +130,7 @@ namespace PicSimulatorLib
                     break;
 
                 case Instruction.InstructionCode.IORWF:
-                    value = (byte)(_mcu.WReg | _mcu.Data[f].Value);
+                    value = (byte)(_mcu.wreg | _mcu.Data[f].Value);
                     SetDestination(value, d, f, true);
                     break;
 
@@ -127,7 +140,7 @@ namespace PicSimulatorLib
                     break;
 
                 case Instruction.InstructionCode.MOVWF:
-                    _mcu.Data[f].Value = _mcu.WReg;
+                    _mcu.Data[f].Value = _mcu.wreg;
                     break;
 
                 case Instruction.InstructionCode.RLF:
@@ -145,15 +158,15 @@ namespace PicSimulatorLib
                     break;
 
                 case Instruction.InstructionCode.SUBWF:
-                    carry = _mcu.WReg <= _mcu.Data[f].Value;
-                    value = (byte)(_mcu.Data[f].Value - _mcu.WReg);
+                    carry = _mcu.wreg <= _mcu.Data[f].Value;
+                    value = (byte)(_mcu.Data[f].Value - _mcu.wreg);
                     _mcu.Status.C = carry;
                     SetDestination(value, d, f, true);
                     break;
 
                 case Instruction.InstructionCode.SUBWFB:
-                    carry = _mcu.WReg <= _mcu.Data[f].Value;
-                    value = (byte)(_mcu.Data[f].Value - _mcu.WReg - (_mcu.Status.C ? 0 : 1));
+                    carry = _mcu.wreg <= _mcu.Data[f].Value;
+                    value = (byte)(_mcu.Data[f].Value - _mcu.wreg - (_mcu.Status.C ? 0 : 1));
                     _mcu.Status.C = carry;
                     SetDestination(value, d, f, true);
                     break;
@@ -164,7 +177,7 @@ namespace PicSimulatorLib
                     break;
 
                 case Instruction.InstructionCode.XORWF:
-                    value = (byte)(_mcu.WReg ^ _mcu.Data[f].Value);
+                    value = (byte)(_mcu.wreg ^ _mcu.Data[f].Value);
                     SetDestination(value, d, f, true);
                     break;
 
@@ -205,90 +218,95 @@ namespace PicSimulatorLib
                     break;
 
                 case Instruction.InstructionCode.ADDLW:
-                    value = (byte)(_mcu.WReg + k);
-                    _mcu.Status.C = value < _mcu.WReg;
+                    value = (byte)(_mcu.wreg + k);
+                    _mcu.Status.C = value < _mcu.wreg;
                     SetDestination(value, false, f, true);
                     break;
 
                 case Instruction.InstructionCode.ANDLW:
-                    value = (byte)(_mcu.WReg & k);
+                    value = (byte)(_mcu.wreg & k);
                     SetDestination(value, false, f, true);
                     break;
 
                 case Instruction.InstructionCode.IORLW:
-                    value = (byte)(_mcu.WReg | k);
+                    value = (byte)(_mcu.wreg | k);
                     SetDestination(value, false, f, true);
                     break;
 
-                case Instruction.InstructionCode.MOVLB:
-                    _mcu.SelectedBank = k;
-                    break;
-
-                case Instruction.InstructionCode.MOVLP:
-                    _mcu.PCLATH = k;
-                    break;
-
                 case Instruction.InstructionCode.MOVLW:
-                    _mcu.WReg = k;
+                    _mcu.wreg = k;
                     break;
 
                 case Instruction.InstructionCode.SUBLW:
-                    carry = _mcu.WReg <= k;
-                    value = (byte)(_mcu.WReg - k);
+                    carry = _mcu.wreg <= k;
+                    value = (byte)(_mcu.wreg - k);
                     _mcu.Status.C = carry;
                     SetDestination(value, false, f, true);
                     break;
 
                 case Instruction.InstructionCode.XORLW:
-                    value = (byte)(_mcu.WReg ^ k);
+                    value = (byte)(_mcu.wreg ^ k);
                     SetDestination(value, false, f, true);
                     break;
 
                 case Instruction.InstructionCode.BRA:
+                    _mcu.PC += k;
                     break;
 
                 case Instruction.InstructionCode.BRW:
+                    _mcu.PC += _mcu.wreg;
                     break;
 
-                case Instruction.InstructionCode.CALL:
-                    break;
-                case Instruction.InstructionCode.CALLW:
-                    break;
-                case Instruction.InstructionCode.GOTO:
-                    break;
-                case Instruction.InstructionCode.RETFIE:
-                    break;
-                case Instruction.InstructionCode.RETLW:
-                    break;
-                case Instruction.InstructionCode.RETURN:
-                    break;
                 case Instruction.InstructionCode.CLRWDT:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
+
                 case Instruction.InstructionCode.NOP:
                     break;
+
                 case Instruction.InstructionCode.OPTION:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
+
                 case Instruction.InstructionCode.RESET:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
+
                 case Instruction.InstructionCode.SLEEP:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
+
                 case Instruction.InstructionCode.TRIS:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
+
                 case Instruction.InstructionCode.ADDFSR:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
                 case Instruction.InstructionCode.MOVIW:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
                 case Instruction.InstructionCode.MOVIW2:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
                 case Instruction.InstructionCode.MOVWI:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
                 case Instruction.InstructionCode.MOVWI2:
-                    break;
+                    throw new NotImplementedException(ins.ToString());
+
+                // Unable to process with current informations
+                case Instruction.InstructionCode.MOVLB:
+                //_mcu.Bank = k;
+                case Instruction.InstructionCode.MOVLP:
+                //_mcu.PCLATH = k;
+                case Instruction.InstructionCode.CALL:
+                case Instruction.InstructionCode.CALLW:
+                case Instruction.InstructionCode.GOTO:
+                case Instruction.InstructionCode.RETFIE:
+                case Instruction.InstructionCode.RETLW:
+                case Instruction.InstructionCode.RETURN:
                 default:
+                    incrementPC = false;
+                    _mcu.DelegateInstruction(ins);
                     break;
             }
 
-            _mcu.IncrementPC();
+            if (incrementPC)
+                _mcu.IncrementPC();
+            ins.IsNext = false;
+            _mcu.NextInstruction.IsNext = true;
         }
 
         private void SetDestination(byte value, bool d = true, byte f = 0, bool checkZ = true)
@@ -299,7 +317,7 @@ namespace PicSimulatorLib
             if (d)
                 _mcu.Data[f].Value = value;
             else
-                _mcu.WReg = value;
+                _mcu.wreg = value;
         }
     }
 }

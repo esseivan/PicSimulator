@@ -4,6 +4,7 @@ using PicSimulatorLib;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -25,14 +26,16 @@ namespace PicSimulator
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private Settings settings;
         private string appName = "PicSimulator";
+        private Settings settings;
 
-        private InstructionSet iSet = new InstructionSet();
-        public IEnumerable<Instruction> Instructions => iSet.Instructions.Values;
+        public IEnumerable<Instruction> Instructions => mcu?.Program.Instructions.Values;
 
         public event PropertyChangedEventHandler PropertyChanged;
         private CommonOpenFileDialog ofd = null;
+
+        private Simulator sim;
+        private MCU mcu;
 
         public void OnPropertyChanged(string propertyName)
         {
@@ -43,6 +46,9 @@ namespace PicSimulator
         {
             InitializeComponent();
             DataContext = this;
+
+            cbMCUs.ItemsSource = Enum.GetValues(typeof(Generator.MCUReference));
+            cbMCUs.SelectedIndex = 0;
 
             LoadSettings();
             if (!string.IsNullOrEmpty(settings.MicrochipPath))
@@ -109,10 +115,10 @@ namespace PicSimulator
 
             if (ofd.ShowDialog() == true)
             {
-                iSet.SetInstructions(HexFileDecoder.GetInstructions(ofd.FileName));
+                mcu = Generator.GenerateSimulator((Generator.MCUReference)cbMCUs.SelectedItem);
+                mcu.Decode(ofd.FileName);
+                sim = new Simulator(mcu);
                 OnPropertyChanged("Instructions");
-                listCode.UpdateLayout();
-
             }
         }
 
@@ -134,6 +140,27 @@ namespace PicSimulator
         private void MenuItemQuit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void MenuItemStep_Click(object sender, RoutedEventArgs e)
+        {
+            sim.Step();
+            listCode.ScrollIntoView(mcu.NextInstruction);
+        }
+
+        private void MenuItemStartPause_Click(object sender, RoutedEventArgs e)
+        {
+            Stopwatch sw = new Stopwatch();
+            // Test run, max speed
+            double count = Math.Pow(2, 24);
+            sw.Restart();
+            for (double i = 0; i < count; i++)
+            {
+                sim.Step();
+            }
+            sw.Stop();
+            double frequency = count / ((double)sw.ElapsedTicks / Stopwatch.Frequency);
+            Console.WriteLine(EsseivaN.Tools.Tools.DecimalToEngineer(frequency) + "Hz");
         }
     }
 }

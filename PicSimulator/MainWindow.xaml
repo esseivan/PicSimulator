@@ -9,7 +9,12 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
+        <Menu DockPanel.Dock="Top" FlowDirection="LeftToRight" Height="28">
+            <Menu.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <DockPanel VerticalAlignment="Stretch" HorizontalAlignment="Left"/>
+                </ItemsPanelTemplate>
+            </Menu.ItemsPanel>
             <MenuItem Header="_File">
                 <MenuItem Header="_Open" Click="MenuItemOpen_Click"/>
                 <MenuItem Header="_Quit" Click="MenuItemQuit_Click"/>
@@ -17,9 +22,32 @@
             <MenuItem Header="_Tools">
                 <MenuItem Header="_Load Microchip Directory" Click="MenuItemLoad_Click"/>
             </MenuItem>
+            <MenuItem Header="Start/Pause" Click="MenuItemStartPause_Click"/>
+            <MenuItem Header="Stop"/>
+            <MenuItem Header="Step" Click="MenuItemStep_Click"/>
+            <!--<MenuItem HorizontalAlignment="Right">
+                <MenuItem.Header>
+                    <ComboBox x:Name="cbMCUs"/>
+                </MenuItem.Header>
+            </MenuItem>-->
         </Menu>
+        <ComboBox Name="cbMCUs" HorizontalAlignment="Right" DockPanel.Dock="Top" Margin="0,-28,0,0" Height="Auto"/>
         <Grid>
-            <ListView x:Name="listCode" SelectionMode="Single" ItemsSource="{Binding Instructions}" FontFamily="Courier New" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="23*"/>
+                <ColumnDefinition Width="65*"/>
+            </Grid.ColumnDefinitions>
+            <ListView x:Name="listCode" SelectionMode="Single" ItemsSource="{Binding Instructions}" FontFamily="Courier New" Grid.ColumnSpan="2" >
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsNext, UpdateSourceTrigger=PropertyChanged}" Value="True">
+                                <Setter Property="Background" Value="Cyan"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView>
                         <GridView.Columns>
@@ -31,6 +59,16 @@
                                 </GridViewColumn.CellTemplate>
                                 <GridViewColumn.Header>
                                     <TextBlock Text="Address" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn>
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Address, StringFormat=X4}" TextAlignment="Center" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                                <GridViewColumn.Header>
+                                    <TextBlock Text="Address [Hex]"/>
                                 </GridViewColumn.Header>
                             </GridViewColumn>
                             <GridViewColumn>
@@ -76,11 +114,6 @@
                         </GridView.Columns>
                     </GridView>
                 </ListView.View>
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    </Style>
-                </ListView.ItemContainerStyle>
             </ListView>
         </Grid>
     </DockPanel>

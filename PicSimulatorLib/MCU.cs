@@ -14,165 +14,79 @@ namespace PicSimulatorLib
         /// </summary>
         public static string MicrochipProcPath = @"C:\Program Files (x86)\Microchip\MPLABX";
 
-        #region Config
+        public MCUSettings Settings => settings;
+        protected MCUSettings settings;
+        public abstract string MCU_Name { get; }
 
-        /// <summary>
-        /// MCU name
-        /// </summary>
-        public abstract string mcuName { get; }
-        /// <summary>
-        /// Reset vector
-        /// </summary>
-        public virtual short ResetVector => 0;
-        /// <summary>
-        /// Interrupt vector
-        /// </summary>
-        public virtual short InterruptVector => 4;
-        /// <summary>
-        /// Number of bits in address
-        /// </summary>
-        public abstract byte addrBits { get; }
-        /// <summary>
-        /// Number of bits in bank
-        /// </summary>
-        public abstract byte bankBits { get; }
-        /// <summary>
-        /// Amount of registers per bank
-        /// </summary>
-        public abstract short bankLength { get; }
-        /// <summary>
-        /// Amount of banks
-        /// </summary>
-        public abstract byte bankCount { get; }
-
-        #endregion
-
-        #region HW
-
-        /// <summary>
-        /// Data memory (registers)
-        /// </summary>
-        public Register[] Data => data;
-        /// <summary>
-        /// Status register
-        /// </summary>
-        public StatusRegister Status => (StatusRegister)GetRegister("STATUS");
-        /// <summary>
-        /// Name to register links
-        /// </summary>
-        public Dictionary<string, short> RegistersNames => registersNames;
-        /// <summary>
-        /// Program memory
-        /// </summary>
+        #region Memory
+        protected InstructionSet program;
+        protected MemoryMap data;
+        protected short[] configuration;
+        protected StatusRegister status;
         public InstructionSet Program => program;
-        /// <summary>
-        /// IOs
-        /// </summary>
-        public IO[] GPIOs => gpios;
-        /// <summary>
-        /// Work register
-        /// </summary>
-        public abstract byte WReg { get; set; }
-        /// <summary>
-        /// Program counter
-        /// </summary>
-        public short PC
+        public MemoryMap Data => data;
+        public short[] Configuration => configuration;
+        public Dictionary<string, short> RegistersName
         {
-            get
-            {
-                return (short)(PCL + PCLATH << 8);
-            }
-            set
-            {
-                byte valL = (byte)(value & 0xFF);
-                byte valH = (byte)(value >> 8);
-                PCLATH = valH;
-                PCL = valL;
-            }
+            get => data.names;
+            protected set => data.names = value;
         }
-        /// <summary>
-        /// Program counter Low byte
-        /// </summary>
-        public abstract byte PCL { get; set; }
-        /// <summary>
-        /// Program counter LAT High byte
-        /// </summary>
-        public abstract byte PCLATH { get; set; }
-        /// <summary>
-        /// Stack memory
-        /// </summary>
-        public short[] Stack => stack;
-        /// <summary>
-        /// Next instruction to be executed
-        /// </summary>
-        public Instruction NextInstruction => program[PC];
-
-        /// <summary>
-        /// Increment the program counter
-        /// </summary>
-        public void IncrementPC() => PC++;
-
-        /// <summary>
-        /// User ID registers
-        /// </summary>
-        public abstract short[] UserID { get; }
-
-        /// <summary>
-        /// Configuration words registers
-        /// </summary>
-        public abstract short[] ConfigurationWords { get; }
-
-        /// <summary>
-        /// Device ID Register
-        /// </summary>
-        public abstract short DeviceID { get; }
-
-        /// <summary>
-        /// Configuration memory registers
-        /// </summary>
-        public short[] ConfigurationMemory => configurationMemory;
-
-        /// <summary>
-        /// Selected bank
-        /// </summary>
-        public abstract byte SelectedBank { get; set; }
-
+        public virtual Instruction NextInstruction => program[PC];
+        public virtual StatusRegister Status => status;
+        public abstract byte Bank { get; }
         #endregion
 
-        #region Privates
+        #region PC
+        public abstract short PC { get; set; }
+        public virtual void OffsetPC(short offset) => PC += offset;
+        public virtual void IncrementPC() => PC++;
+        #endregion
 
-        /// <summary>
-        /// Data memory (registers)
-        /// </summary>
-        protected Register[] data;
-        /// <summary>
-        /// Name to register links
-        /// </summary>
-        protected Dictionary<string, short> registersNames = new Dictionary<string, short>();
-        /// <summary>
-        /// Program memory
-        /// </summary>
-        protected InstructionSet program = new InstructionSet();
-        /// <summary>
-        /// IOs
-        /// </summary>
-        protected IO[] gpios;
-        /// <summary>
-        /// Stack memory
-        /// </summary>
+        #region Stack
         protected short[] stack;
+        public short[] Stack => stack;
+        protected abstract byte StackPtr { get; set; }
+        public virtual short PopStack()
+        {
+            if (StackPtr == 0)
+                throw new InvalidOperationException("Stack is empty");
+            return stack[--StackPtr];
+        }
 
         /// <summary>
-        /// Selected bank, from 1 to bankCount
+        /// Push (PC + 1) to the stack
         /// </summary>
-        protected byte selectedBank = 0;
+        public virtual void PushStack()
+        {
+            stack[StackPtr++] = (short)(PC + 1);
+            if (StackPtr >= settings.stackCount)
+                StackOverflow();
+        }
 
         /// <summary>
-        /// All configuration memory registers
+        /// Push the specified value to the stack
         /// </summary>
-        protected short[] configurationMemory;
+        public virtual void PushStack(short val)
+        {
+            stack[StackPtr++] = val;
+            if (StackPtr >= settings.stackCount)
+                StackOverflow();
+        }
 
+        public virtual void StackOverflow()
+        {
+            throw new Exception("Stack Overflow");
+        }
+        public abstract void Call(short addr);
         #endregion
+
+        #region WREG
+        public abstract byte wreg { get; set; }
+        #endregion
+
+        #region Utils
+
+        public abstract void DelegateInstruction(Instruction ins);
 
         #region Hidden
 
@@ -197,20 +111,18 @@ namespace PicSimulatorLib
                     string regName = datas[0].ToUpper();
                     string regDestStr = datas[2].Substring(0, datas[2].Length - 1);
                     short regDest = Convert.ToInt16(regDestStr, 16);
-                    if (registersNames.ContainsKey(regName))
+                    if (RegistersName.ContainsKey(regName))
                         throw new InvalidOperationException($"Key already exists : '{regName}'");
-                    registersNames[regName] = regDest;
-                    if (regName == "STATUS")
-                    {
-                        data[regDest] = GenerateStatusRegister(data[regDest]);
-                    }
+                    RegistersName[regName] = regDest;
                 }
                 else if (line.StartsWith(microchip_decoder_register))
                 {
                     thisLine = true;
                 }
             }
+            SetStatusRegister();
         }
+        public abstract void SetStatusRegister();
 
         public string GetMicrochipFilePath(string chipName)
         {
@@ -229,7 +141,7 @@ namespace PicSimulatorLib
             return list[0];
         }
 
-        protected virtual Register GenerateStatusRegister(Register baseRegister)
+        protected virtual StatusRegister GenerateStatusRegister(Register baseRegister)
         {
             return StatusRegister.CopyFrom(baseRegister);
         }
@@ -246,49 +158,14 @@ namespace PicSimulatorLib
 
         #endregion
 
-        #region Addressing
-
-        /// <summary>
-        /// Get a register from the name
-        /// </summary>
-        public Register GetRegister(string name)
-        {
-            name = name.ToUpper();
-            if (registersNames.ContainsKey(name))
-                return data[registersNames[name]];
-            return null;
-        }
-
-        /// <summary>
-        /// Get a register from relative address and selected bank
-        /// </summary>
-        public Register GetRegister(short addrRel)
-        {
-            return data[GetAbsAddr(addrRel, selectedBank)];
-        }
-
-        /// <summary>
-        /// Get a register from relative address and specified bank
-        /// </summary>
-        public Register GetRegister(short addrRel, byte bank)
-        {
-            return data[GetAbsAddr(addrRel, bank)];
-        }
-
-        /// <summary>
-        /// Return a register from absolute address
-        /// </summary>
-        public Register GetRegisterAbs(int addrAbs)
-        {
-            return data[addrAbs];
-        }
+        #region Misc
 
         /// <summary>
         /// Get the bank from the address
         /// </summary>
         public int GetBank(short absAddr)
         {
-            return (absAddr >> addrBits) & (int)(Math.Pow(2, bankBits) - 1);
+            return (absAddr >> settings.addrBits) & (int)(Math.Pow(2, settings.bankBits) - 1);
         }
 
         /// <summary>
@@ -296,7 +173,7 @@ namespace PicSimulatorLib
         /// </summary>
         public int GetAbsAddr(short relAddr, byte bank)
         {
-            return (int)((bank >> addrBits) + relAddr);
+            return (int)((bank >> settings.addrBits) + relAddr);
         }
 
         /// <summary>
@@ -304,9 +181,12 @@ namespace PicSimulatorLib
         /// </summary>
         public int GetRelAddr(int absAddr)
         {
-            return absAddr & (int)(Math.Pow(2, addrBits) - 1);
+            return absAddr & (int)(Math.Pow(2, settings.addrBits) - 1);
         }
 
         #endregion
+
+        #endregion
+
     }
 }

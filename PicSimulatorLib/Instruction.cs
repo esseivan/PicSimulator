@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace PicSimulatorLib
 {
-    public class Instruction
+    public class Instruction : INotifyPropertyChanged
     {
         public const byte InstructionCodeBits = 14;
 
@@ -38,7 +39,7 @@ namespace PicSimulatorLib
         public string Comment { get; set; } = string.Empty;
         public void AddComment(string comment)
         {
-            this.Comment += $"{(hasComment ? " " : "")}{comment}";
+            this.Comment += $"{(hasComment ? " ; " : "")}{comment}";
             hasComment = true;
         }
 
@@ -51,6 +52,21 @@ namespace PicSimulatorLib
             if (index)
                 Label += (labelCtr++).ToString();
             return Label;
+        }
+        public static void ResetLabelCounter() => labelCtr = 1;
+
+        private bool isNext = false;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public bool IsNext
+        {
+            get => isNext;
+            set
+            {
+                isNext = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsNext"));
+            }
         }
 
         public Instruction() { }
