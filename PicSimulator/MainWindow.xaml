@@ -7,7 +7,82 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:lib="clr-namespace:PicSimulatorLib;assembly=PicSimulatorLib"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
+        Title="MainWindow" Width="1600" Height="900" Loaded="Window_Loaded" Closing="Window_Closing">
+    <Window.Resources>
+        <Style x:Key="MyFocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Control}">
+                        <Grid Margin="8">
+                            <Ellipse
+                    Name="r1"
+                    Stroke="Black"
+                    StrokeDashArray="2 2"
+                    StrokeThickness="1"/>
+                            <Border
+                    Name="border"
+                    Width="{TemplateBinding ActualWidth}"
+                    Height="{TemplateBinding ActualHeight}"
+                    BorderThickness="1"
+                    CornerRadius="2"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CircleButton" TargetType="Button">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource MyFocusVisual}"/>
+            <Setter Property="Background" Value="#FF6DB4EF"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse Fill="{TemplateBinding Background}"/>
+                            <Ellipse>
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush>
+                                        <GradientStop Offset="0" Color="#00000000"/>
+                                        <GradientStop Offset="0.88" Color="#00000000"/>
+                                        <GradientStop Offset="1" Color="#80000000"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse Margin="10" x:Name="highlightCircle" >
+                                <Ellipse.Fill >
+                                    <LinearGradientBrush >
+                                        <GradientStop Offset="0" Color="#50FFFFFF"/>
+                                        <GradientStop Offset="0.5" Color="#00FFFFFF"/>
+                                        <GradientStop Offset="1" Color="#50FFFFFF"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="highlightCircle" Property="Fill">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0.3,0" EndPoint="0.7,1">
+                                            <GradientStop Offset="0" Color="#50FFFFFF"/>
+                                            <GradientStop Offset="0.5" Color="#00FFFFFF"/>
+                                            <GradientStop Offset="1" Color="#50FFFFFF"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="content" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="0.5" X="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top" FlowDirection="LeftToRight" Height="28">
             <Menu.ItemsPanel>
@@ -23,21 +98,19 @@
                 <MenuItem Header="_Load Microchip Directory" Click="MenuItemLoad_Click"/>
             </MenuItem>
             <MenuItem Header="Start/Pause" Click="MenuItemStartPause_Click"/>
-            <MenuItem Header="Stop"/>
+            <MenuItem Header="Reset" Click="MenuItemStop_Click"/>
             <MenuItem Header="Step" Click="MenuItemStep_Click"/>
-            <!--<MenuItem HorizontalAlignment="Right">
-                <MenuItem.Header>
-                    <ComboBox x:Name="cbMCUs"/>
-                </MenuItem.Header>
-            </MenuItem>-->
         </Menu>
-        <ComboBox Name="cbMCUs" HorizontalAlignment="Right" DockPanel.Dock="Top" Margin="0,-28,0,0" Height="Auto"/>
-        <Grid>
+        <StackPanel HorizontalAlignment="Right" DockPanel.Dock="Top" Height="Auto" Margin="0 -28 0 0" Orientation="Horizontal">
+            <ComboBox Name="cbFrequencies" Height="Auto" IsEditable="True" MinWidth="100" Margin="0 0 10 0" TextBoxBase.TextChanged="cbFrequencies_TextChanged" IsTextSearchEnabled="False" />
+            <ComboBox Name="cbMCUs" Height="Auto" MinWidth="100" IsEditable="True" SelectionChanged="cbMCUs_SelectionChanged"/>
+        </StackPanel>
+        <Grid Margin="5 0 5 5">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="23*"/>
-                <ColumnDefinition Width="65*"/>
+                <ColumnDefinition Width="700"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <ListView x:Name="listCode" SelectionMode="Single" ItemsSource="{Binding Instructions}" FontFamily="Courier New" Grid.ColumnSpan="2" >
+            <ListView x:Name="listCode" Grid.Column="0" SelectionMode="Single" ItemsSource="{Binding Instructions}" FontFamily="Courier New" HorizontalAlignment="Stretch" >
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -51,6 +124,29 @@
                 <ListView.View>
                     <GridView>
                         <GridView.Columns>
+                            <GridViewColumn>
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type lib:Instruction}">
+                                        <Button Height="20" Width="20" Click="ButtonBreakPoint_Click">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource CircleButton}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding BreakPointSet}" Value="True">
+                                                            <Setter Property="Background" Value="Red" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding BreakPointSet}" Value="False">
+                                                            <Setter Property="Background" Value="Transparent" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                                <GridViewColumn.Header>
+                                    <TextBlock Text="Breakpoint" />
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
                             <GridViewColumn>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -115,6 +211,33 @@
                     </GridView>
                 </ListView.View>
             </ListView>
+
+            <Grid Grid.Column="1" >
+                <TabControl VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                    <TabItem Header="Configuration">
+                        <Grid>
+                            <TextBlock Name="txtFrequency" Text="0 Hz" />
+
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="IOs" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Grid>
+                            <Canvas x:Name="canvasIOs" Background="LightGray" DockPanel.Dock="Top" MouseMove="CanvasIOs_MouseMove" MouseUp="canvasIOs_MouseUp"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+                                <Button Content="Add" Margin="5" Padding="5" Click="ButtonAdd_Click"/>
+                                <Border BorderBrush="#707070" BorderThickness="1" Margin="5" Padding="5" Background="#DDDDDD" PreviewMouseUp="Button_MouseUp">
+                                    <TextBlock Text="Drag here to delete" />
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Register Map" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Grid>
+
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>

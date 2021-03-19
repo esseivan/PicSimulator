@@ -21,14 +21,14 @@ namespace PicSimulatorLib
         private byte _pcl
         {
             get => data[regPCL].Value;
-            set => data[regPCL].Value = value;
+            set => data[regPCL].SetValue(value, false);
         }
         private byte pcL
         {
             get => data[regPCL].Value;
             set
             {
-                data[regPCL].Value = value;
+                data[regPCL].SetValue(value, false);
                 pcH = (byte)(data[regPCLATH].Value & 0x7F);
             }
         }
@@ -40,7 +40,7 @@ namespace PicSimulatorLib
             }
             set
             {
-                data[regPCLATH].Value = (byte)(value >> 8);
+                data[regPCLATH].SetValue((byte)(value >> 8), false);
                 pcL = (byte)(value & 0xFF);
             }
         }
@@ -64,6 +64,7 @@ namespace PicSimulatorLib
             set => data[regStackPtr].Value = value;
         }
 
+
         public MCU_PIC16F1827()
         {
             settings = new MCUSettings()
@@ -78,13 +79,91 @@ namespace PicSimulatorLib
                 programMemoryCount = 4096,
                 configurationMemoryCount = 10,
                 stackCount = 16,
+                ioCount = 16,
             };
+
             data = new MemoryMap(Settings);
             stack = new short[settings.stackCount];
             configuration = new short[settings.configurationMemoryCount];
             configuration[6] = 0b10100010000000; // Device ID
-
+            SetSyncs();
+            ios = new IO[settings.ioCount];
             DefineRegistersNameFromMicrochipFile(MCU_Name);
+            SetIOs();
+            SetConstraints();
+        }
+
+        private void SetConstraints()
+        {
+            Constraints["PORTA"] = new List<Constraint>()
+            {
+                // PORTA is linked by TRISA being as output and LATA being the value
+                // 0 and x returns x
+                // 1 and x return indefinite
+                new Constraint(
+                    (o) => (byte)(~data["TRISA"].Value & data["LATA"].Value),
+                    "PORTA",
+                    new string[] {"TRISA","LATA" }
+                    ),
+            };
+
+            Constraints["PORTB"] = new List<Constraint>()
+            {
+                new Constraint(
+                    (o) => (byte)(~data["TRISB"].Value & data["LATB"].Value),
+                    "PORTB",
+                    new string[] {"TRISB","LATB" }
+                    ),
+            };
+
+            foreach (var constraintSet in Constraints)
+            {
+                foreach (var constraint in constraintSet.Value)
+                {
+                    foreach (var input in constraint.inputs)
+                    {
+                        if (!AffectConstraints.ContainsKey(input))
+                            AffectConstraints[input] = new List<string>();
+                        AffectConstraints[input].Add(constraintSet.Key);
+                    }
+                }
+            }
+        }
+
+        private void SetIOs()
+        {
+            Register RA = data["PORTA"];
+            Register RB = data["PORTB"];
+
+            byte i = 0;
+            for (byte j = 0; j < 8; j++)
+            {
+                ios[i++] = new IO(RA, j, $"RA{j}");
+            }
+            for (byte j = 0; j < 8; j++)
+            {
+                ios[i++] = new IO(RB, j, $"RB{j}");
+            }
+        }
+
+        // A faire : 
+        // des liens comme par exemple PORTA = TRISA & LATA
+
+        public void SetSyncs()
+        {
+            // 12 first registers are synced accross all banks
+            for (short i = 0; i <= 0x0B; i++)
+            {
+                SetBankRegisterSync(i);
+            }
+
+            // Last 16 bytes are synced accross all banks
+            for (short i = 0x70; i <= 0x7F; i++)
+            {
+                SetBankRegisterSync(i);
+            }
+
+            ApplySyncs();
         }
 
         protected override Dictionary<long, Instruction> _decode(Dictionary<long, Instruction> data)
@@ -118,14 +197,7 @@ namespace PicSimulatorLib
         {
             byte f = (byte)ins.Parameter1;
             short k_short = ins.Parameter1;
-            byte dTemp = (byte)ins.Parameter2;
-            byte b = (byte)ins.Parameter2;
-            byte value = 0, value2 = 0, value3 = 0;
-            bool carry;
             byte k = f;
-            if (dTemp < 0 || dTemp > 1)
-                throw new ArgumentOutOfRangeException("d");
-            bool d = dTemp == 1;
             bool incrementPC = true;
 
             switch (ins.Code)

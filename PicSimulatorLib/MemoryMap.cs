@@ -29,14 +29,14 @@ namespace PicSimulatorLib
 
         public readonly MCUSettings settings;
 
-        public Dictionary<string, short> names;
+        public Dictionary<string, long> names;
 
         public int Count => registers.Length;
 
         public MemoryMap(MCUSettings settings)
         {
             this.settings = settings;
-            names = new Dictionary<string, short>();
+            names = new Dictionary<string, long>();
             registers = new Register[settings.dataMemoryCount];
             for (int i = 0; i < settings.dataMemoryCount; i++)
             {
@@ -44,9 +44,17 @@ namespace PicSimulatorLib
             }
         }
 
-        public void SetNames(IDictionary<string, short> data)
+        public void SetNames(IDictionary<string, long> data)
         {
-            names = new Dictionary<string, short>(data);
+            names = new Dictionary<string, long>(data);
+        }
+
+        public string GetRegisterName(Register register)
+        {
+            var name = names.Where((x) => this[x.Value] == register);
+            if (name.Count() == 0)
+                return string.Empty;
+            return name.First().Key;
         }
     }
 }

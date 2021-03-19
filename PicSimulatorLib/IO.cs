@@ -10,8 +10,9 @@ namespace PicSimulatorLib
     {
         public Register reference = null;
         public byte bitIndex = 0;
+        public string name = "Undefined";
 
-        public IO(Register reference, byte bitIndex)
+        public IO(Register reference, byte bitIndex, string name)
         {
             if (reference == null)
                 throw new ArgumentNullException("reference");
@@ -19,6 +20,7 @@ namespace PicSimulatorLib
                 throw new ArgumentOutOfRangeException("bitIndex");
             this.reference = reference;
             this.bitIndex = bitIndex;
+            this.name = name;
         }
 
         private byte GetBit()

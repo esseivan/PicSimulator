@@ -25,7 +25,14 @@ namespace PicSimulatorLib
         public int SyncToAddr = SyncToAddr_None;
         public const int SyncToAddr_None = -1;
 
+        public string Name => name;
+        internal string name = string.Empty;
+
         private byte value = 0x00;
+
+        public event EventHandler<RegisterValueChangedEventArgs> ValueChanged;
+
+        public static Func<byte, Register, byte> ApplyConstraints;
 
         public Register() { }
 
@@ -49,19 +56,35 @@ namespace PicSimulatorLib
             this.SyncToAddr = syncAddr;
         }
 
-        public void SetValue(byte value)
+        public void SetValue(byte value, bool checkConstraints = true)
         {
+            ValueChanged?.Invoke(this, new RegisterValueChangedEventArgs(this.value, value));
+
             if (SyncRegister != null)
-                SyncRegister.SetValue(value);
-            else if (SyncToAddr != SyncToAddr_None)
-            {
-                throw new InvalidOperationException("Register not synced. Use RegisterList.ApplySyncs() method");
-            }
+                SyncRegister.SetValue(value, checkConstraints);
             else
             {
-                value &= WritableMask;
-                value &= UnimplementedMaskInvert;
+                if (SyncToAddr != SyncToAddr_None)
+                    throw new InvalidOperationException("Register not synced");
+
                 this.value = value;
+
+                // After a change, apply constraints
+                if (checkConstraints)
+                    ConstraintWork();
+            }
+        }
+
+        public void ConstraintWork()
+        {
+            if (name == string.Empty)
+                return;
+
+            if (ApplyConstraints != null)
+            {
+                byte temp = ApplyConstraints(value, this);
+                if (value != temp)
+                    SetValue(temp);
             }
         }
 
@@ -76,13 +99,11 @@ namespace PicSimulatorLib
                 return SyncRegister.GetValue();
             else if (SyncToAddr != SyncToAddr_None)
             {
-                throw new InvalidOperationException("Register not synced. Use RegisterList.ApplySyncs() method");
+                throw new InvalidOperationException("Register not synced");
             }
             else
             {
-                byte result = (byte)(value & ReadableMask);
-                result &= UnimplementedMaskInvert;
-                return result;
+                return value;
             }
         }
 
@@ -151,6 +172,17 @@ namespace PicSimulatorLib
             };
 
             return sr;
+        }
+    }
+
+    public class RegisterValueChangedEventArgs : EventArgs
+    {
+        public byte OldValue, NewValue;
+
+        public RegisterValueChangedEventArgs(byte oldValue, byte newValue)
+        {
+            OldValue = oldValue;
+            NewValue = newValue;
         }
     }
 }

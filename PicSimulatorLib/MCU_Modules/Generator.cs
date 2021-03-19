@@ -28,6 +28,9 @@ namespace PicSimulatorLib
                 throw;
             }
 
+            if (mcuType == null)
+                throw new ArgumentException("MCU not recognised");
+
             if (!mcuType.IsSubclassOf(typeof(MCU)))
                 throw new ArgumentException("Type not supported");
 

@@ -26,7 +26,7 @@ namespace PicSimulatorLib
         public InstructionSet Program => program;
         public MemoryMap Data => data;
         public short[] Configuration => configuration;
-        public Dictionary<string, short> RegistersName
+        public Dictionary<string, long> RegistersName
         {
             get => data.names;
             protected set => data.names = value;
@@ -84,7 +84,46 @@ namespace PicSimulatorLib
         public abstract byte wreg { get; set; }
         #endregion
 
+        #region IOs
+
+        protected IO[] ios;
+
+        public IO[] IOs => ios;
+
+        #endregion
+
+        protected Dictionary<string, List<Constraint>> Constraints = new Dictionary<string, List<Constraint>>();
+        protected Dictionary<string, List<string>> AffectConstraints = new Dictionary<string, List<string>>();
+
+        public MCU()
+        {
+            Register.ApplyConstraints = ApplyConstraints;
+        }
+
         #region Utils
+
+        public byte ApplyConstraints(byte value, Register o)
+        {
+            // If contraint output
+            if (Constraints.ContainsKey(o.Name))
+            {
+                foreach (var item in Constraints[o.Name])
+                {
+                    value = item.action(value);
+                }
+            }
+
+            // If constraint input
+            if (AffectConstraints.ContainsKey(o.Name))
+            {
+                foreach (var item in AffectConstraints[o.name])
+                {
+                    data[item].ConstraintWork();
+                }
+            }
+
+            return value;
+        }
 
         public abstract void DelegateInstruction(Instruction ins);
 
@@ -110,10 +149,11 @@ namespace PicSimulatorLib
                     string[] datas = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     string regName = datas[0].ToUpper();
                     string regDestStr = datas[2].Substring(0, datas[2].Length - 1);
-                    short regDest = Convert.ToInt16(regDestStr, 16);
+                    long regDest = Convert.ToInt32(regDestStr, 16);
                     if (RegistersName.ContainsKey(regName))
                         throw new InvalidOperationException($"Key already exists : '{regName}'");
                     RegistersName[regName] = regDest;
+                    data[regDest].name = regName;
                 }
                 else if (line.StartsWith(microchip_decoder_register))
                 {
@@ -155,6 +195,36 @@ namespace PicSimulatorLib
         public Dictionary<long, Instruction> Decode(Dictionary<long, short> data) => _decode(HexFileDecoder.GetInstructions(data));
 
         protected abstract Dictionary<long, Instruction> _decode(Dictionary<long, Instruction> data);
+
+        #endregion
+
+        #region Sync
+
+        /// <summary>
+        /// Set a bank relative sync
+        /// </summary>
+        public void SetBankRegisterSync(short relAddr)
+        {
+            for (byte i = 1; i < settings.bankCount; i++)
+            {
+                data[i, relAddr].SyncToAddr = relAddr;
+            }
+        }
+
+        /// <summary>
+        /// Apply syncs addresses
+        /// </summary>
+        public void ApplySyncs()
+        {
+            var toSync = data.registers.Where((x) => x.SyncToAddr != Register.SyncToAddr_None);
+            foreach (var item in toSync)
+            {
+                item.SyncRegister = data[item.SyncToAddr];
+                if (item == item.SyncRegister)
+                    throw new InvalidOperationException("Cannot sync to itself");
+                item.SyncToAddr = Register.SyncToAddr_None;
+            }
+        }
 
         #endregion
 

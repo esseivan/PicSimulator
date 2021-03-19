@@ -15,7 +15,8 @@ namespace PicSimulatorLib
         public byte bankCount,
             addrBits,
             bankBits,
-            stackCount;
+            stackCount,
+            ioCount;
 
         public short bankLength,
             resetVector,

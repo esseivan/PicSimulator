@@ -45,6 +45,17 @@ namespace PicSimulatorLib
 
         public string Label { get; set; }
 
+        private bool isBPSet = false;
+        public bool BreakPointSet
+        {
+            get => isBPSet;
+            set
+            {
+                isBPSet = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("BreakPointSet"));
+            }
+        }
+
         private static int labelCtr = 1;
         public string SetLabelName(bool index = false)
         {
